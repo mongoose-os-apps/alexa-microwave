@@ -1,4 +1,4 @@
-# iot-microwave
+# alexa-microwave
 
 ## Overview
 
