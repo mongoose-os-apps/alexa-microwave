@@ -2,8 +2,7 @@
 
 ## Overview
 
-This is the default Mongoose OS app + modified init.js.
-It's for controlling a microwave via MQTT. 
+This is the Mongoose OS app that controls a microwave via MQTT. 
 
 For the microwave, you can hack one with photo relays or regular relays.
 Basically what you need to do is to simulate the depression of button pushes.
