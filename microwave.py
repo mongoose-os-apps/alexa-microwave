@@ -6,15 +6,23 @@ import re
 # --------------- Helpers that build all of the responses ----------------------
 
 def build_speechlet_response(title, output, reprompt_text, should_end_session):
+    if title is 'Welcome':
+        url = "https://s3-ap-northeast-1.amazonaws.com/esp32-microwave2/microwave-tp.png"
+    else:
+        url = "https://s3-ap-northeast-1.amazonaws.com/esp32-microwave2/satorice-tp.png"
     return {
         'outputSpeech': {
             'type': 'PlainText',
             'text': output
         },
-        'card': {
-            'type': 'Simple',
-            'title': "SessionSpeechlet - " + title,
-            'content': "SessionSpeechlet - " + output
+        "card": {
+            "type": "Standard",
+            "title": "Microwave",
+            "text": output,
+            "image": {
+                "smallImageUrl": url,
+                "largeImageUrl": url
+            }
         },
         'reprompt': {
             'outputSpeech': {
@@ -39,8 +47,8 @@ def build_response(session_attributes, speechlet_response):
 def get_welcome_response():
     session_attributes = {}
     card_title = "Welcome"
-    speech_output = "How would you like me to cook? Tell me power and duration."
-    reprompt_text = "How would you like me to cook? Tell me power and duration."
+    speech_output = "How would you like me to cook? Tell me power and duration." 
+    reprompt_text = "How would you like me to cook? Tell me power and duration." 
     should_end_session = False
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
@@ -58,36 +66,36 @@ def set_mode_in_session(intent, session):
     card_title = intent['name']
     session_attributes = {}
     client = boto3.client('iot-data', region_name='eu-west-1')
-
+    
     if 'Power' in intent['slots'] and 'Duration' in intent['slots']:
         power = intent['slots']['Power']['value']
         isotime = intent['slots']['Duration']['value']
-
+    
         #Format PT50M40S, PT1M3S, PT10M, PT1M, PT90S, PT5S, PT150S, etc
         minute = re.match(r'^PT[0-9]+M', isotime)
-        if minute is None:
+        if minute is None: 
             minute = '0'
             speech_min = ''
-        else:
+        else: 
             minute = minute.group(0).replace('M', '').replace('PT','')
             if minute == '1':
                 speech_min = minute + " minute"
             else:
                 speech_min = minute + " minutes"
-
+                
         second = re.match(r'^PT.*[0-9]+S$', isotime)
-        if second is None:
+        if second is None: 
             second = '0'
             speech_sec = ""
-        else:
-            second = re.sub(r'^PT[0-9]*M', '', second.group(0)).replace('S', '').replace('PT', '')
+        else: 
+            second = re.sub(r'^PT[0-9]*M', '', second.group(0)).replace('S', '').replace('PT', '') 
             if second == '1':
                 speech_sec = second + " second"
             else:
                 speech_sec = second + " seconds"
             if speech_min != '':
                 speech_sec = " and " + speech_sec
-
+                
         speech_output = "Ok, cooking at " + power + " watts for " + speech_min + speech_sec
         power = int(power)
         minute = int(minute)
@@ -97,11 +105,34 @@ def set_mode_in_session(intent, session):
             topic='microwave',
             qos=1,
             payload=json.dumps({
-                "power": power,
+                "power": power, 
                 "min": minute,
                 "sec": second
             } )
         )
+        
+        response = client.publish(
+            topic='bell',
+            qos=1,
+            payload=json.dumps({
+                "number": 1
+            } )
+        )
+        
+        response = client.publish(
+            topic='bell/2',
+            qos=1,
+            payload=json.dumps({
+                "power": power, 
+                "min": minute,
+                "sec": second
+            } )
+        )
+        
+        
+        
+        
+        
         
         reprompt_text = ""
         should_end_session = True
@@ -120,22 +151,22 @@ def get_full_setting_in_session(intent, session):
     if 'Duration' in intent['slots']:
         duration = intent['slots']['Duration']['value']
         isotime = duration
-
+            
             #Format PT50M90S
         duration = duration.replace('PT', '')
         duration = duration.replace('M', '')
-
-        speech_output = "Ok, cooking at full power for" + duration + "minutes."
-
+        
+        speech_output = "Ok, cooking at full power for" + duration + "minutes." 
+        
         response = client.publish(
             topic='microwave',
             qos=1,
             payload=json.dumps({
-                "power": "full",
+                "power": "full", 
                 "duration": isotime
             } )
         )
-
+        
         reprompt_text = ""
         should_end_session = True
     else:
